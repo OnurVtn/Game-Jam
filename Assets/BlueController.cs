@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class BlueController : MonoBehaviour
 {
@@ -16,14 +17,14 @@ public class BlueController : MonoBehaviour
         
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        Debug.Log("blue = " + collision.gameObject.tag);
-    }
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log("blue collision = " + other.gameObject.tag);
+        if (other.CompareTag("SwitchLimit"))
+        {
+            //transform.DORotate(Vector3.up * 0, 0.25f);
+        }
+
 
     }
 }
