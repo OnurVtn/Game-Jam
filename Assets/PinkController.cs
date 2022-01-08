@@ -5,12 +5,20 @@ using DG.Tweening;
 
 public class PinkController : MonoBehaviour
 {
-    private bool areTheyUnited = false;
+    [SerializeField] private List<Transform> playerLevelObjects;
+    [SerializeField] private Animator animator;
+
+    private Clothes currentClothes;
+    private Shoes currentShoes;
+    private int previousMatchingAssetIndex = -1;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        currentClothes = Clothes.Nude;
+        currentShoes = Shoes.Nude;
+
+        UpdateClothing();
     }
 
     // Update is called once per frame
@@ -21,41 +29,56 @@ public class PinkController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log("pink collision = " + other.gameObject.tag);
-
-        if (other.CompareTag("BluePlayer"))
-        {
-
-            //if (areTheyUnited == false)
-            //{
-            //    this.transform.DOPunchScale(Vector3.one * 0.5f, 0.25f);
-            //    this.gameObject.transform.localPosition = Vector3.up;
-
-            //    areTheyUnited = true;
-            //}
-        }
-
         if (other.CompareTag("SwitchLimit"))
         {
-
-            //Vector3[] path = new Vector3[] { new Vector3(1, 0, 1), new Vector3(0, 0, 0) };
-            //this.transform.DOLocalPath(path, 1f).OnStart(() => PlayerController.Instance.SwitchPositionsStart()).OnComplete(() => PlayerController.Instance.SwitchPositionsStop());
-            //this.transform.DOLocalMove(Vector3.zero, 0.25f);
-
             PlayerController.Instance.SwitchPositionsStart();
-            //transform.DORotate(Vector3.up * 0, 0.25f);
-
         }
 
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("SwitchLimit"))
+        if (other.CompareTag("Suit"))
         {
-            
+            currentClothes = Clothes.Suit;
         }
+        else if (other.CompareTag("Dress"))
+        {
+            currentClothes = Clothes.Dress;
+        }
+        else if (other.CompareTag("SuitShoes"))
+        {
+            currentShoes = Shoes.SuitShoes;
+        }
+        else if (other.CompareTag("Heeled"))
+        {
+            currentShoes = Shoes.Heeled;
+        }
+        else if (other.CompareTag("Obstacle"))
+        {
+            PlayerController.Instance.HitObstacle();
+        }
+
+        UpdateClothing();
     }
 
+    private void UpdateClothing()
+    {
+        string activatedAssetTag = "" + currentClothes.ToString()[0] + currentShoes.ToString()[0];
+        activatedAssetTag = activatedAssetTag.ToLower();
+
+        for (int i = 0; i < playerLevelObjects.Count; i++)
+        {
+            if (playerLevelObjects[i].CompareTag(activatedAssetTag))
+            {
+                if (previousMatchingAssetIndex != i)
+                {
+                    if (previousMatchingAssetIndex != -1)
+                        playerLevelObjects[previousMatchingAssetIndex].gameObject.SetActive(false);
+
+                    playerLevelObjects[i].gameObject.SetActive(true);
+                    playerLevelObjects[i].transform.DOPunchScale(Vector3.one * 0.5f, 0.25f);
+                    previousMatchingAssetIndex = i;
+                }
+                break;
+            }
+        }
+    }
 
 }

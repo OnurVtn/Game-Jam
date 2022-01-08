@@ -96,7 +96,6 @@ public class PlayerController : MonoBehaviour
 
                     leftSMR.localPosition = -localPos;
                     rightSMR.localPosition = localPos;
-                    Debug.Log("true");
                 }
                 else
                 {
@@ -106,7 +105,6 @@ public class PlayerController : MonoBehaviour
 
                     leftSMR.localPosition = localPos;
                     rightSMR.localPosition = -localPos;
-                    Debug.Log("false");
                 }
             }
         }
@@ -159,6 +157,19 @@ public class PlayerController : MonoBehaviour
 
         leftSMR.transform.DORotate(Vector3.up * 0, 0.25f);
         rightSMR.transform.DORotate(Vector3.up * 0, 0.25f);
+
+    }
+
+    public void HitObstacle()
+    {
+        transform.DOPause();
+
+        transform.DOShakePosition(0.5f);
+        float currentPoseZ = transform.position.z;
+        transform.DOMoveZ(currentPoseZ - 2, 0.5f);
+        //transform.position.z = currentPoseZ - 2;
+
+        transform.DOPlay();
 
     }
 
