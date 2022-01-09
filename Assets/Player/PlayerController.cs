@@ -32,6 +32,8 @@ public class PlayerController : MonoBehaviour
     private bool updatePose = true;
     private bool switchControl = false;
 
+    private Vector3 prevPathPoint;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -64,7 +66,10 @@ public class PlayerController : MonoBehaviour
             pathPoints[i] = pathObjects[i].position;
         }
 
-        transform.DOPath(pathPoints, forwardMovementSpeed).SetSpeedBased().SetEase(Ease.Linear);
+        transform.DOPath(pathPoints, forwardMovementSpeed, PathType.Linear)
+            .OnUpdate(OnPathUpdate)
+            .SetSpeedBased()
+            .SetEase(Ease.Linear);
         
     }
 
@@ -109,6 +114,13 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+    }
+
+    private void OnPathUpdate()
+    {
+        var direction = (transform.position - prevPathPoint).normalized;
+        transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
+        prevPathPoint = transform.position;
     }
 
     private void HandleInput()
