@@ -10,21 +10,69 @@ public class PinkController : MonoBehaviour
 
     private Clothes currentClothes;
     private Shoes currentShoes;
-    private int previousMatchingAssetIndex = -1;
+    private int CurrentMatchingAssetIndex = -1;
+
+    private GameStates gameStates = GameStates.Initilazed;
 
     // Start is called before the first frame update
     void Start()
     {
-        currentClothes = Clothes.Nude;
-        currentShoes = Shoes.Nude;
+        initPlayer();
 
-        UpdateClothing();
+        GameManager.onGameStateChanged += GameManager_onGameStateChanged;
+
     }
 
     // Update is called once per frame
     void Update()
     {
 
+    }
+
+    private void initPlayer()
+    {
+        currentClothes = Clothes.Nude;
+        currentShoes = Shoes.Nude;
+
+
+        UpdateClothing();
+    }
+
+    private void GameManager_onGameStateChanged(GameStates GameState)
+    {
+        if (GameState == GameStates.Started)
+        {
+            startGame();
+        }
+        else if (GameState == GameStates.EndGameStarted)
+        {
+            EndGameStart();
+        }
+        else if (GameState == GameStates.RestartGame)
+        {
+            initPlayer();
+        }
+    }
+
+    public void startGame()
+    {
+        playerLevelObjects[CurrentMatchingAssetIndex].gameObject.GetComponent<Animator>().SetBool("isGameStart", true);
+    }
+
+    public void EndGameStart()
+    {
+        if (currentClothes == Clothes.Dress && currentShoes == Shoes.Heeled)
+        {
+            playerLevelObjects[CurrentMatchingAssetIndex].gameObject.GetComponent<Animator>().SetBool("isGameFinishedHappy", true);
+            GameManager.Instance.ChangePinkPlayerStatus(true);
+        }
+        else
+        {
+            playerLevelObjects[CurrentMatchingAssetIndex].gameObject.GetComponent<Animator>().SetBool("isGameFinishedSad", true);
+            GameManager.Instance.ChangePinkPlayerStatus(false);
+        }
+
+        StartCoroutine(GameFinishCoroutine());
     }
 
     private void OnTriggerEnter(Collider other)
@@ -53,6 +101,8 @@ public class PinkController : MonoBehaviour
         else if (other.CompareTag("Obstacle"))
         {
             PlayerController.Instance.HitObstacle();
+            currentClothes = Clothes.Nude;
+            currentShoes = Shoes.Nude;
         }
 
         UpdateClothing();
@@ -67,18 +117,29 @@ public class PinkController : MonoBehaviour
         {
             if (playerLevelObjects[i].CompareTag(activatedAssetTag))
             {
-                if (previousMatchingAssetIndex != i)
+                if (CurrentMatchingAssetIndex != i)
                 {
-                    if (previousMatchingAssetIndex != -1)
-                        playerLevelObjects[previousMatchingAssetIndex].gameObject.SetActive(false);
+                    if (CurrentMatchingAssetIndex != -1)
+                        playerLevelObjects[CurrentMatchingAssetIndex].gameObject.SetActive(false);
 
                     playerLevelObjects[i].gameObject.SetActive(true);
-                    playerLevelObjects[i].transform.DOPunchScale(Vector3.one * 0.5f, 0.25f);
-                    previousMatchingAssetIndex = i;
+                    if (GameManager.Instance.getGameState() == GameStates.Started)
+                    {
+                        playerLevelObjects[i].gameObject.GetComponent<Animator>().SetBool("isGameStart", true);
+                        playerLevelObjects[i].transform.DOPunchScale(Vector3.one * 0.5f, 0.25f);
+                    }
+                    CurrentMatchingAssetIndex = i;
                 }
                 break;
             }
         }
+    }
+
+    private IEnumerator GameFinishCoroutine()
+    {
+        yield return new WaitForSeconds(1f);
+        GameManager.Instance.EndGameFinish();
+        yield return null;
     }
 
 }

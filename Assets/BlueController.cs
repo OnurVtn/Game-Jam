@@ -11,15 +11,15 @@ public class BlueController : MonoBehaviour
 
     private Clothes currentClothes;
     private Shoes currentShoes;
-    private int previousMatchingAssetIndex = -1;
+    private int CurrentMatchingAssetIndex = -1;
 
+    private GameStates gameStates = GameStates.Initilazed;
     // Start is called before the first frame update
     void Start()
     {
-        currentClothes = Clothes.Nude;
-        currentShoes = Shoes.Nude;
+        initPlayer();
 
-        UpdateClothing();
+        GameManager.onGameStateChanged += GameManager_onGameStateChanged;
 
     }
 
@@ -29,6 +29,49 @@ public class BlueController : MonoBehaviour
 
     }
 
+    private void initPlayer()
+    {
+        currentClothes = Clothes.Nude;
+        currentShoes = Shoes.Nude;
+
+        UpdateClothing();
+    }
+
+    private void GameManager_onGameStateChanged(GameStates GameState)
+    {
+        if (GameState == GameStates.Started)
+        {
+            startGame();
+        }
+        else if (GameState == GameStates.EndGameStarted)
+        {
+            EndGameStart();
+        }
+        else if (GameState == GameStates.RestartGame)
+        {
+            initPlayer();
+        }
+    }
+
+    public void startGame()
+    {
+        playerLevelObjects[CurrentMatchingAssetIndex].gameObject.GetComponent<Animator>().SetBool("isGameStart", true);
+    }
+
+    public void EndGameStart()
+    {
+        if (currentClothes == Clothes.Suit && currentShoes == Shoes.SuitShoes)
+        {
+            playerLevelObjects[CurrentMatchingAssetIndex].gameObject.GetComponent<Animator>().SetBool("isGameFinishedHappy", true);
+            GameManager.Instance.ChangeBluePlayerStatus(true);
+        }
+        else
+        {
+            playerLevelObjects[CurrentMatchingAssetIndex].gameObject.GetComponent<Animator>().SetBool("isGameFinishedSad", true);
+            GameManager.Instance.ChangeBluePlayerStatus(false);
+        }
+
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -48,6 +91,11 @@ public class BlueController : MonoBehaviour
         {
             currentShoes = Shoes.Heeled;
         }
+        else if (other.CompareTag("Obstacle"))
+        {
+            currentClothes = Clothes.Nude;
+            currentShoes = Shoes.Nude;
+        }
 
         UpdateClothing();
 
@@ -63,14 +111,18 @@ public class BlueController : MonoBehaviour
         {
             if (playerLevelObjects[i].CompareTag(activatedAssetTag))
             {
-                if(previousMatchingAssetIndex != i)
+                if (CurrentMatchingAssetIndex != i)
                 {
-                    if (previousMatchingAssetIndex != -1)
-                        playerLevelObjects[previousMatchingAssetIndex].gameObject.SetActive(false);
+                    if (CurrentMatchingAssetIndex != -1)
+                        playerLevelObjects[CurrentMatchingAssetIndex].gameObject.SetActive(false);
 
                     playerLevelObjects[i].gameObject.SetActive(true);
-                    playerLevelObjects[i].transform.DOPunchScale(Vector3.one * 0.5f, 0.25f);
-                    previousMatchingAssetIndex = i;
+                    if (GameManager.Instance.getGameState() == GameStates.Started)
+                    {
+                        playerLevelObjects[i].gameObject.GetComponent<Animator>().SetBool("isGameStart", true);
+                        playerLevelObjects[i].transform.DOPunchScale(Vector3.one * 0.5f, 0.25f);
+                    }
+                    CurrentMatchingAssetIndex = i;
 
                 }
 

@@ -17,3 +17,14 @@ using UnityEngine;
         Heeled,
     };
 
+public enum GameStates
+{
+    Initilazed,
+    Started,
+    Finished,
+    Paused,
+    EndGameStarted,
+    EndGameFinished,
+    RestartGame,
+};
+

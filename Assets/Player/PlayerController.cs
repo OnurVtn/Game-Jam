@@ -17,7 +17,9 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private List<Transform> pathObjects;
     private Vector3[] pathPoints;
 
-    [SerializeField] private List<Transform> playerLevelObjects;
+    [SerializeField] private List<Transform> endGamePathObjects;
+    private Vector3[] endGamePathPoints;
+
 
     private static PlayerController instance;
     public static PlayerController Instance => instance ?? (instance = FindObjectOfType<PlayerController>());
@@ -25,14 +27,8 @@ public class PlayerController : MonoBehaviour
     private Vector2 inputDrag;
     private Vector2 inputpreviousMousePosition;
 
-    private int playerLevelCount = 0;
-    private int playerLevelCountPrev = 2;
-    private int playerLevelCountMax = 3;
-
     private bool updatePose = true;
     private bool switchControl = false;
-
-    private Vector3 prevPathPoint;
 
     // Start is called before the first frame update
     void Start()
@@ -59,19 +55,25 @@ public class PlayerController : MonoBehaviour
         }
 
 
+        GameManager.onGameStateChanged += GameManager_onGameStateChanged;
+
         pathPoints = new Vector3[pathObjects.Count];
-         
-        for (int i = 0; i<pathObjects.Count; i++)
+
+        for (int i = 0; i < pathObjects.Count; i++)
         {
             pathPoints[i] = pathObjects[i].position;
         }
 
-        transform.DOPath(pathPoints, forwardMovementSpeed, PathType.Linear)
-            .OnUpdate(OnPathUpdate)
-            .SetSpeedBased()
-            .SetEase(Ease.Linear);
-        
+        endGamePathPoints = new Vector3[endGamePathObjects.Count];
+
+        for (int i = 0; i < endGamePathObjects.Count; i++)
+        {
+            endGamePathPoints[i] = endGamePathObjects[i].position;
+        }
+
     }
+
+
 
     // Update is called once per frame
     void Update()
@@ -86,11 +88,27 @@ public class PlayerController : MonoBehaviour
         //transform.Translate(Vector3.forward * forwardMovementSpeed * Time.deltaTime);
     }
 
+    private void GameManager_onGameStateChanged(GameStates GameState)
+    {
+        if (GameState == GameStates.Started)
+        {
+            StartGame();
+        }
+        else if (GameState == GameStates.Finished)
+        {
+            FinishGame();
+        }
+        else if (GameState == GameStates.RestartGame)
+        {
+            RestartGame();
+        }
+    }
+
     private void HandleSideMovement()
     {
         if (activateOppositeMovement)
         {
-            
+
             if (updatePose)
             {
                 if (switchControl)
@@ -116,11 +134,12 @@ public class PlayerController : MonoBehaviour
 
     }
 
-    private void OnPathUpdate()
+    private void onEndGamePathCompleted()
     {
-        var direction = (transform.position - prevPathPoint).normalized;
-        transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
-        prevPathPoint = transform.position;
+        GameManager.Instance.EndGameStart();
+
+        leftSMR.transform.DORotate(Vector3.up * 180, 0.25f);
+        rightSMR.transform.DORotate(Vector3.up * 180, 0.25f);
     }
 
     private void HandleInput()
@@ -142,15 +161,42 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void addCube()
+    private void StartGame()
     {
-        playerLevelCountPrev = playerLevelCount;
-        playerLevelCount++;
-        playerLevelCount = playerLevelCount % playerLevelCountMax;
+        updatePose = true;
 
-        playerLevelObjects[playerLevelCount].gameObject.SetActive(true);
-        playerLevelObjects[playerLevelCountPrev].gameObject.SetActive(false);
+        forwardMovementSpeed = 10;
+
+        transform.DOPath(pathPoints, forwardMovementSpeed, PathType.Linear)
+        .SetSpeedBased()
+        .SetEase(Ease.Linear);
+
     }
+
+    private void FinishGame()
+    {
+        updatePose = false;
+
+        forwardMovementSpeed = 20;
+
+        transform.DOPath(endGamePathPoints, forwardMovementSpeed, PathType.Linear)
+        .SetSpeedBased()
+        .SetEase(Ease.Linear)
+        .OnComplete(onEndGamePathCompleted);
+    }
+
+    private void RestartGame()
+    {
+        forwardMovementSpeed = 0;
+
+        leftSMR.transform.DORotate(Vector3.up * 0, 0.25f);
+        rightSMR.transform.DORotate(Vector3.up * 0, 0.25f);
+
+        RotateManager.DORotate(Vector3.up, 0.25f);
+
+        transform.position = pathPoints[0];
+    }
+
 
     public void SwitchPositionsStart()
     {
