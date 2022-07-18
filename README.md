@@ -1,1 +1,1 @@
-# Gamejam
+# Game Jam
